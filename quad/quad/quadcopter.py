@@ -1,5 +1,4 @@
 import time
-import math
 import threading
 
 import numpy as np
@@ -8,23 +7,8 @@ from scipy.integrate import ode
 from quad import rotation_matrix, wrap
 from quad import QuadConfig, MotorConfig
 
-
-class Motors(object):
-    def __init__(self, config: MotorConfig, n: int = 4) -> None:
-        self.d: float = config.d
-        self.p: float = config.pitch
-        self.s: np.ndarray = np.full(n, config.speed)
-        self.f: np.ndarray = np.full(n, config.thrust)
-
-        self.c: float = (
-            1.857e-11
-            * math.pow(self.d)
-            * math.sqrt(self.p)
-        )
-
-    def set_speed(self, speeds: np.ndarray) -> None:
-        self.s = speeds * 60 / (2 * np.pi)
-        self.f = self.c * np.square(self.s)
+from quad.quad import Motors
+from quad.control import Controller
 
 
 class Quadcopter(object):
@@ -40,25 +24,25 @@ class Quadcopter(object):
         self.J_inv: np.ndarray = np.linalg.inv(self.J)
 
         ## allocation matrix
-        C: float = config.drag
         L: float = config.length
+        C: float = config.lift_const
         self._allocation_matrix: np.ndarray = np.array(
             [[1, 1, 1, 1], [L, 0, -L, 0], [0, L, -L, 0], [C, -C, C, -C]]
         )
 
         ## intialize state
         self.state: np.ndarray = np.zeros(12)
-        self.state[0:3] = np.array(config.initial_state[0])
-        self.state[6:9] = np.array(config.initial_state[1])
+        self.state[0:3] = np.array(config.states[0])
+        self.state[6:9] = np.array(config.states[1])
 
-        self.motors: Motors = Motors(config.motor, 4)
+        self.motors: Motors = Motors(config.motors, 4)
         self.solver: ode = ode(f=self._fetch_state).set_integrator("vode")
 
         # self._lock: threading.Lock = threading.Lock()
         self._time: float = time.time()
         self._execute: bool = True
 
-    def start(self, dt: float, scale: float) -> None:
+    def start(self, dt: float = 5e-2, scale: float = 1) -> None:
         self._thread = threading.Thread(target=self._threading, args=(dt, scale))
         self._thread.start()
 
@@ -66,8 +50,14 @@ class Quadcopter(object):
         self._execute = False
         self._thread.join()
 
-    def set_motor_speed(self, speeds: np.ndarray) -> None:
+    def set_motor(self, speeds: np.ndarray) -> None:
         self.motors.set_speed(speeds)
+
+    def get_time(self) -> float:
+        return self._time
+
+    def get_state(self) -> None:
+        pass
 
     def _threading(self, dt: float, scale: float) -> None:
         rate: float = scale * dt
@@ -105,11 +95,14 @@ class Quadcopter(object):
 
 
 if __name__ == "__main__":
+    
     config: QuadConfig = QuadConfig(
         weight=1.2,
         length=0.3,
         radius=0.1,
-        initial_state=[[0, 0, 0], [0, 0, 0]],
-        drag=0.0245,
-        propeller=MotorConfig(10.0, 4.5),
+        states=[[0, 0, 0], [0, 0, 0]],
+        motors=MotorConfig(10.0, 4.5),
+        lift_const=0.0245
     )
+
+    
