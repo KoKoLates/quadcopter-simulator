@@ -1,4 +1,3 @@
-from abc import ABC
 from dataclasses import dataclass, field
 
 
@@ -15,16 +14,7 @@ class QuadConfig(object):
     weight: float
     length: float
     radius: float
-    states: list[list, list]
+    states: list[list[float]]
 
     motors: MotorConfig
-    lift_const: float
-
-
-@dataclass
-class ControlConfig(object):
-    position_k: list
-    attitude_k: list
-
-    
-
+    drag_coef: float
