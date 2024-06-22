@@ -18,3 +18,7 @@ class QuadConfig(object):
 
     motors: MotorConfig
     drag_coef: float
+
+
+def load_config(file_path: str) -> QuadConfig:
+    raise NotImplementedError

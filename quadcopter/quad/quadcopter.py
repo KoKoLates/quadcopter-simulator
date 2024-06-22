@@ -50,7 +50,17 @@ class Quadcopter(object):
 
     def stop(self) -> None:
         self.execute = False
-        self.thread.join()
+        if self.thread is not None:
+            self.thread.join()
+
+    def set_motor_speeds(self, speeds: np_arr_f64) -> None:
+        self.motors.set_speeds(speeds)
+
+    def get_time(self) -> float:
+        return self.time
+    
+    def get_state(self):
+        return
     
     def _threading(self, dt: float, scale: float) -> None:
         rate: float = scale * dt
