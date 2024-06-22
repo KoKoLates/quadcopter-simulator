@@ -10,8 +10,8 @@ def test_motor_init() -> None:
 
     assert motors._d == 10
     assert motors._p == 2
-    assert np.array_equal(motors._s, np.array([0, 0, 0, 0]))
-    assert np.array_equal(motors._f, np.array([0, 0, 0, 0]))
+    assert np.array_equal(motors.speeds(), np.full(4, 0))
+    assert np.array_equal(motors.thrust(), np.full(4, 0))
     assert motors._c == pytest.approx(2.626e-9)
 
 
@@ -19,8 +19,9 @@ def test_motor_set_speeds() -> None:
     config: MotorConfig = MotorConfig(d=10, pitch=2)
     motors: Motors = Motors(config)
 
-    speeds: np.ndarray = np.array([1000, 1000, 1000, 1000])
+    assert np.array_equal(motors.speeds(), np.full(4, 0))
+    speeds: np.ndarray = np.full(4, 1000)
     motors.set_speeds(speeds=speeds)
 
-    assert np.array_equal(motors._s, speeds)
-    assert motors._f == pytest.approx(np.array([0.2394802, 0.2394802, 0.2394802, 0.2394802]))
+    assert np.array_equal(motors.speeds(), speeds)
+    assert motors.thrust() == pytest.approx(np.full(4, 0.2394802))

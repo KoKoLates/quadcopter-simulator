@@ -2,6 +2,7 @@ import time
 import threading
 import numpy as np
 
+from typing import Union
 from scipy.integrate import ode
 
 from quadcopter import QuadConfig
@@ -21,10 +22,10 @@ class Quadcopter(object):
         Iy: float = Ix
         Iz: float = (2 * self.w * self.r**2) / 5 + (4 * self.w * self.l**2)
         self.J: np_arr_f64 = np.array([[Ix, 0, 0], [0, Iy, 0], [0, 0, Iz]])
-        self.J_inv: np_arr_f64 = np.linalg.inv(self.J).astype(np_arr_f64)
+        self.J_inv: np_arr_f64 = np.linalg.inv(self.J)
 
         ## initialize state
-        self.state: np_arr_f64 = np.zeros(12).astype(np_arr_f64)
+        self.state: np_arr_f64 = np.zeros(12)
         self.state[0:3] = np.array(config.states[0])
         self.state[6:9] = np.array(config.states[1])
 
@@ -43,6 +44,7 @@ class Quadcopter(object):
 
         self.time: float = time.time()
         self.execute: bool = True
+        self.thread: Union[threading.Thread, None] = None
 
     def start(self, dt: float = 5e-2, scale: float = 1.0) -> None:
         self.thread = threading.Thread(target=self._threading, args=(dt, scale))
@@ -58,10 +60,10 @@ class Quadcopter(object):
 
     def get_time(self) -> float:
         return self.time
-    
-    def get_state(self):
-        return
-    
+
+    def get_state(self) -> np_arr_f64:
+        return self.state
+
     def _threading(self, dt: float, scale: float) -> None:
         rate: float = scale * dt
         last: float = self.time
@@ -85,13 +87,12 @@ class Quadcopter(object):
         dstate: np_arr_f64 = np.zeros_like(self.state)
 
         dstate[0:3] = self.state[3:6]
-        dstate[6:9] = (
-            np.matmul(rotation_matrix(self.state[6:9]), np.array([0, 0, f[0, 0]])) / self.w
-            + np.array([0, 0, -9.81])
-        )
+        dstate[6:9] = np.matmul(
+            rotation_matrix(self.state[6:9]), np.array([0, 0, f[0]])
+        ) / self.w + np.array([0, 0, -9.81])
         dstate[6:9] = self.state[9:12]
-        dstate[9:12] = np.multiply(
+        dstate[9:12] = np.matmul(
             self.J_inv,
-            f[1:4] - np.cross(self.state[9:12], np.dot(self.J, self.state[9:12]))
+            f[1:4] - np.cross(self.state[9:12], np.dot(self.J, self.state[9:12])),
         )
         return dstate
