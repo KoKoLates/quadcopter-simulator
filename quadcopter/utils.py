@@ -1,16 +1,20 @@
 import numpy as np
+import numpy.typing as npt
 
-def wrap(angles: np.ndarray) -> np.ndarray:
-    """wrap the input angles into the range of [−π,π)
-    @param angle: input angles to be wrapped
+np_arr_f64 = npt.NDArray[np.float64]
+
+
+def wrap(angles: np_arr_f64) -> np_arr_f64:
+    """Wrap the input angles into the range between [−π,π)
+    @param angles: input angles to be wrapped
     @return: wrapped angles
     """
     return (angles + np.pi) % (np.pi * 2) - np.pi
 
 
-def rotation_matrix(angles: np.ndarray) -> np.ndarray:
-    """input the roll, pitch and yaw and make it into a rotation 
-    matrix for body frame to inertia frame conversion
+def rotation_matrix(angles: np_arr_f64) -> np_arr_f64:
+    """Input roll, pitch and yaw angle and make them into a 
+    rotation matrix from body frame to inertia frame
     @param angles: `(roll, pitch, yaw)`
     @return: rotation matrix from body frame to inertia frame
     """
@@ -25,4 +29,4 @@ def rotation_matrix(angles: np.ndarray) -> np.ndarray:
     RY = np.array([[cy,-sy, 0],
                    [sy, cy, 0],
                    [0,  0,  1]])
-    return RY @ RR @ RP
+    return np.dot(RY, np.dot(RR, RP))
