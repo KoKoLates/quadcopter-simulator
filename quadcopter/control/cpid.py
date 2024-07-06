@@ -3,18 +3,18 @@ import numpy as np
 
 from dataclasses import dataclass, field
 
-from quadcopter import Quadcopter, np_arr_f64, wrap
+from quadcopter import Quadcopter, wrap
 from .controller import Controller
 
 
 @dataclass
 class PID(object):
-    Kp: np_arr_f64
-    Ki: np_arr_f64
-    Kd: np_arr_f64
-    Ie: np_arr_f64 = field(default=np.array([0, 0, 0]))
+    Kp: np.ndarray
+    Ki: np.ndarray
+    Kd: np.ndarray
+    Ie: np.ndarray = field(default=np.array([0, 0, 0]))
 
-    def update(self, error: np_arr_f64, derror: np_arr_f64) -> np_arr_f64:
+    def update(self, error: np.ndarray, derror: np.ndarray) -> np.ndarray:
         self.Ie += np.multiply(self.Ki, error)
         return np.multiply(self.Kp, error) + self.Ie + np.multiply(self.Kd, derror)
 
@@ -38,7 +38,7 @@ class CPID(Controller):
         vstate = np.array([1, 2, 3])
         ostate = np.array([1, 2, 3])
 
-        error: np_arr_f64 = t_pos - states
+        error: np.ndarray = t_pos - states
         ux, uy, uz = self.position.update(error, vstate)
 
         np.clip(uz, 0, 100)

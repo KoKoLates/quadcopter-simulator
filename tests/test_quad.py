@@ -14,12 +14,12 @@ def quadcopter() -> Quadcopter:
         radius=0.2,
         states=[[0, 0, 0], [0, 0, 0]],
         motors=MotorConfig(0.1, 0.2),
-        drag_coef=0.1,
+        lift_const=0.1,
     )
     return Quadcopter(config)
 
 
-def test_quad_init(quadcopter) -> None:
+def test_quad_init(quadcopter: Quadcopter) -> None:
     assert quadcopter.w == 1.0
     assert quadcopter.l == 0.5
     assert quadcopter.r == 0.2
@@ -27,24 +27,24 @@ def test_quad_init(quadcopter) -> None:
     assert np.array_equal(quadcopter.state, np.zeros(12))
 
 
-def test_quad_getter_setter(quadcopter) -> None:
-    speeds = np.array([1200.0, 1100.0, 1050.0, 1000.0])
+def test_quad_getter_setter(quadcopter: Quadcopter) -> None:
+    speeds: np.ndarray = np.array([1200.0, 1100.0, 1050.0, 1000.0])
     quadcopter.set_motor_speeds(speeds)
-    assert np.array_equal(quadcopter.motors.speeds(), speeds)
+    assert np.array_equal(quadcopter.motors.speeds, speeds)
 
-    rpm = speeds * 60 / (2 * np.pi)
-    expect = (
+    rpm: np.ndarray = speeds * 60 / (2 * np.pi)
+    expect: np.ndarray = (
         1.857e-11
         * quadcopter.motors._d**2
         * np.sqrt(quadcopter.motors._p)
         * np.square(rpm)
     )
-    result = quadcopter.motors.thrust()
+    result: np.ndarray = quadcopter.motors.thrust
     assert np.allclose(expect, result, atol=1e-6)
 
 
-def test_quad_solver(quadcopter) -> None:
-    state = quadcopter.get_state()
+def test_quad_solver(quadcopter: Quadcopter) -> None:
+    state: np.ndarray = quadcopter.state
     quadcopter.start(dt=0.1)
 
     current_time = 0.0
@@ -57,7 +57,7 @@ def test_quad_solver(quadcopter) -> None:
         current_time += 0.1
 
     quadcopter.stop()
-    result = quadcopter.get_state()
+    result: np.ndarray = quadcopter.state
 
     assert not np.allclose(state, result)
 
