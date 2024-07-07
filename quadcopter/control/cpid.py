@@ -32,7 +32,7 @@ class ControlConfig(object):
     yaw_limit: tuple[int, int] = (-900, 900)
     tilt_limit: tuple[int, int] = (-10, 10)
     motor_limit: tuple[int, int] = (4000, 9000)
-
+ 
 
 class CPID(Controller):
     def __init__(self, config: ControlConfig, quad: Quadcopter) -> None:

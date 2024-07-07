@@ -16,7 +16,7 @@ class Quadcopter(object):
         self.w: float = config.weight
         self.l: float = config.length
         self.r: float = config.radius
-
+     
         ## initialize momentum of inertia
         Ix: float = (2 * self.w * self.r**2) / 5 + (2 * self.w * self.l**2)
         Iy: float = Ix
