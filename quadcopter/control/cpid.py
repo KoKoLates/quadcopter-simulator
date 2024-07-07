@@ -3,28 +3,36 @@ import numpy as np
 
 from dataclasses import dataclass, field
 
-from quadcopter import Quadcopter, np_arr_f64, wrap
+from quadcopter import Quadcopter, wrap
 from .controller import Controller
 
 
 @dataclass
 class PID(object):
-    Kp: np_arr_f64
-    Ki: np_arr_f64
-    Kd: np_arr_f64
-    Ie: np_arr_f64 = field(default=np.array([0, 0, 0]))
+    Kp: np.ndarray
+    Ki: np.ndarray
+    Kd: np.ndarray
+    Ie: np.ndarray = field(default_factory=lambda: np.zeros(3))
 
-    def update(self, error: np_arr_f64, derror: np_arr_f64) -> np_arr_f64:
-        self.Ie += np.multiply(self.Ki, error)
-        return np.multiply(self.Kp, error) + self.Ie + np.multiply(self.Kd, derror)
+    def update(self, error: np.ndarray, derror: np.ndarray) -> np.ndarray:
+        """update the PID controller output
+        @param error: the error term
+        @param derror: the derivative of the error term
+        @return: control output
+        """
+        self.Ie += self.Ki * error
+        return self.Kp * error + self.Ie + self.Kd * derror
 
 
 @dataclass
 class ControlConfig(object):
-
     position: PID
     attitude: PID
 
+    yaw_limit: tuple[int, int] = (-900, 900)
+    tilt_limit: tuple[int, int] = (-10, 10)
+    motor_limit: tuple[int, int] = (4000, 9000)
+ 
 
 class CPID(Controller):
     def __init__(self, config: ControlConfig, quad: Quadcopter) -> None:
@@ -32,34 +40,48 @@ class CPID(Controller):
         self.position: PID = config.position
         self.attitude: PID = config.attitude
 
+        ## initialize value clipper
+        self._yaw_limit: tuple[int, int] = config.yaw_limit
+        self.tilt_limit: tuple[int, int] = config.tilt_limit
+        self.motor_limit: tuple[int, int] = config.motor_limit
+
+        ## initialize the mixer matrix
+        self._mixer_matrix: np.ndarray = np.array(
+            [[1, 1, 0, 1], [1, 0, 1, -1], [1, -1, 0, 1], [1, 0, -1, -1]]
+        )
+
     def _update(self) -> None:
         t_pos, t_yaw = self.target
-        states = np.array([1, 2, 3])
-        vstate = np.array([1, 2, 3])
-        ostate = np.array([1, 2, 3])
+        state: np.ndarray = self.quad.state
+        position, velocity, attitude, angular_rate = (
+            state[0:3],
+            state[3:6],
+            state[6:9],
+            state[9:12],
+        )
 
-        error: np_arr_f64 = t_pos - states
-        ux, uy, uz = self.position.update(error, vstate)
+        ## position controller and clipping
+        error_pos: np.ndarray = t_pos - position
+        ux, uy, uz = self.position.update(error_pos, velocity)
 
-        np.clip(uz, 0, 100)
+        uz = np.clip(uz, self.motor_limit[0], self.motor_limit[1])
 
-        roll, pitch, yaw = ostate
-        yaw_dot = 1
-        ax = 1 * (ux * math.sin(yaw) - uy * math.cos(yaw))
-        ay = 1 * (ux * math.cos(yaw) + uy * math.sin(yaw))
+        ## attitude controller and clipping
+        roll, pitch, yaw = attitude
+        _, _, yaw_rate = angular_rate
+        ax = ux * math.sin(yaw) - uy * math.cos(yaw)
+        ay = ux * math.cos(yaw) + uy * math.sin(yaw)
 
-        np.clip(ax, 0, 1)
-        np.clip(ay, 0, 1)  # clip tilte
+        ax, ay = np.clip(ax, self.tilt_limit[0], self.tilt_limit[1]), np.clip(
+            ay, self.tilt_limit[0], self.tilt_limit[1]
+        )
 
-        error[0] = ax - pitch
-        error[1] = ay - roll
-        error[2] = 1 * wrap(t_yaw - yaw) - yaw_dot
+        error_att: np.ndarray = np.array(
+            [ax - roll, ay - pitch, 0.18 * (wrap(t_yaw - yaw)) - yaw_rate]
+        )
+        wx, wy, wz = self.attitude.update(error_att, angular_rate)
+        wz = np.clip(wz, self._yaw_limit[0], self._yaw_limit[1])
 
-        wx, wy, wz = self.attitude.update(error, ostate)
-
-        np.clip(wz, 0, 1)
-
-        i = np.array([[1, 1, 0, 1], [1, 0, 1, -1], [1, -1, 0, 1], [1, 0, -1, -1]])
-
-        m = np.matmul(i, np.array([uz, wx, wy, wz]))
-        self.motor(np.array(m))
+        m = np.matmul(self._mixer_matrix, np.array([uz, wx, wy, wz]))
+        m = np.clip(m, self.motor_limit[0], self.motor_limit[1])
+        self._set_motors(m)

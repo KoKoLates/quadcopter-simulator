@@ -17,7 +17,7 @@ class QuadConfig(object):
     states: list[list[float]]
 
     motors: MotorConfig
-    drag_coef: float
+    lift_const: float
 
 
 def load_config(file_path: str) -> QuadConfig:
