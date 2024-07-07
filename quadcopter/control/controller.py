@@ -2,7 +2,7 @@ import time
 import threading
 import numpy as np
 
-from typing import Callable
+from typing import Callable, Union
 from abc import ABC, abstractmethod
 
 from quadcopter import wrap
@@ -13,34 +13,42 @@ class Controller(ABC):
     def __init__(self, quad: Quadcopter) -> None:
         super(Controller, self).__init__()
         self.quad: Quadcopter = quad
-        self.motor: Callable[[np.ndarray], None] = self.quad.set_motor_speeds
-        self.execute: bool = True
+        self._set_motors: Callable[[np.ndarray], None] = self.quad.set_motor_speeds
+
+        self._thread: Union[threading.Thread, None] = None
+        self._execute: threading.Event = threading.Event()
 
     def start(self, dt: float = 5e-3, scale: float = 1.0) -> None:
-        self.thread = threading.Thread(target=self._threading, args=(dt, scale))
-        self.thread.start()
+        self._execute.set()
+        self._thread = threading.Thread(target=self._threading, args=(dt, scale))
+        self._thread.start()
 
     def stop(self) -> None:
-        self.execute = False
-        if self.thread is not None:
-            self.thread.join()
+        self._execute.clear()
+        if self._thread is not None:
+            self._thread.join()
 
-    def update_target(self, target: tuple) -> None:
+    def update_target(self, target: tuple[float, float, float, float]) -> None:
+        if len(target) != 4:
+            raise ValueError(
+                "Input target must be a tuple with exactly four elements: (x, y, z, yaw)"
+            )
+
         self.target: tuple[np.ndarray, np.ndarray] = (
-            np.array(target[:3]),
-            wrap(target[3]),
+            np.array(target[:3], dtype=float),
+            wrap(np.array([target[3]], dtype=float)),
         )
 
     def _threading(self, dt: float, scale: float) -> None:
         rate: float = scale * dt
         last: float = self.quad.time
-        while self.execute:
+        while self._execute.is_set():
             time.sleep(0)
-            self.time = self.quad.time
-            if last - self.time > rate:
+            current_time: float = self.quad.time
+            if last - current_time > rate:
                 self._update()
-                last = self.time
+                last = current_time
 
     @abstractmethod
     def _update(self) -> None:
-        return NotImplemented
+        pass
