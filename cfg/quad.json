@@ -1,0 +1,14 @@
+{
+  "weight": 1.0,
+  "length": 0.5,
+  "radius": 0.2,
+  "initial_states": {
+    "position": [0, 0, 0],
+    "attitude": [0, 0, 0]
+  },
+  "motors": {
+    "diameter": 0.1,
+    "pitch": 0.2
+  },
+  "lift_const": 0.1
+}

@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass, field
 
 
@@ -21,4 +22,20 @@ class QuadConfig(object):
 
 
 def load_config(file_path: str) -> QuadConfig:
-    raise NotImplementedError
+    with open(file_path, "r") as file:
+        data = json.load(file)
+
+    return QuadConfig(
+        weight=data["weight"],
+        length=data["length"],
+        radius=data["radius"],
+        states=[
+            data["initial_states"]["position"],
+            data["initial_states"]["attitude"]
+        ],
+        motors=MotorConfig(
+            d=data["motors"]["diameter"],
+            pitch=data["motors"]["pitch"]
+        ),
+        lift_const=data["lift_const"]
+    )

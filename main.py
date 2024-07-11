@@ -1,32 +1,25 @@
 import argparse
 import numpy as np
 
-from quadcopter import MotorConfig, QuadConfig
+from quadcopter import MotorConfig, QuadConfig, load_config
 from quadcopter.quad import Quadcopter
 from quadcopter.control import PID, CPID, ControlConfig
 
 
 def main() -> None:
-    quad_config: QuadConfig = QuadConfig(
-        weight=1.0,
-        length=0.5,
-        radius=0.2,
-        states=[[0, 0, 0], [0, 0, 0]],
-        motors=MotorConfig(0.1, 0.2),
-        lift_const=0.1,
-    )
+    quad_config: QuadConfig = load_config("./cfg/quad.json")
     quad: Quadcopter = Quadcopter(quad_config)
 
     ctrl_config: ControlConfig = ControlConfig(
         position=PID(
-            Kp=np.array([300,300,7000]),
-            Ki=np.array([0.04,0.04,4.5]),
-            Kd=np.array([450,450,5000])
+            Kp=[300,300,7000],
+            Ki=[0.04,0.04,4.5],
+            Kd=[450,450,5000]
         ),
         attitude=PID(
-            Kp=np.array([22000,22000,1500]),
-            Ki=np.array([0,0,1.2]),
-            Kd=np.array([12000,12000,0])
+            Kp=[22000,22000,1500],
+            Ki=[0,0,1.2],
+            Kd=[12000,12000,0]
         )
     )
     ctrl: CPID = CPID(ctrl_config, quad)
