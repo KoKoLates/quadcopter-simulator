@@ -3,21 +3,22 @@ import numpy as np
 
 from dataclasses import dataclass, field
 
-from quadcopter import Quadcopter, wrap
-from .controller import Controller
+from quadcopter import wrap
+from quadcopter.quad import Quadcopter
+from quadcopter.control import Controller
+    
 
-
-@dataclass
 class PID(object):
-    Kp: np.ndarray
-    Ki: np.ndarray
-    Kd: np.ndarray
-    Ie: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    def __init__(self, Kp: list[float], Ki: list[float], Kd: list[float]) -> None:
+        self.Kp: np.ndarray = np.array(Kp)
+        self.Ki: np.ndarray = np.array(Ki)
+        self.Kd: np.ndarray = np.array(Kd)
+        self.Ie: np.ndarray = np.zeros(3)
 
     def update(self, error: np.ndarray, derror: np.ndarray) -> np.ndarray:
-        """update the PID controller output
+        """update the PID controller and return the controller output
         @param error: the error term
-        @param derror: the derivative of the error term
+        @param derror: the derivative of error term
         @return: control output
         """
         self.Ie += self.Ki * error
