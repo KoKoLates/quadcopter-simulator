@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 
 from dataclasses import dataclass
 
+from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Line3D
-from mpl_toolkits.mplot3d.axes3d import Axes3D
 
 from quadcopter import rotation_matrix
-from quadcopter import Quadcopter
+from quadcopter.quad import Quadcopter
 
 
 @dataclass
@@ -34,9 +34,9 @@ class Monitor(object):
         self.load_model()
 
     def load_model(self) -> None:
-        line1, _ = self.ax.plot([], [], [], color="b", linewidth=3, antialiased=False)
-        line2, _ = self.ax.plot([], [], [], color="r", linewidth=3, antialiased=False)
-        line3, _ = self.ax.plot([], [], [], color="r", linewidth=3, antialiased=False)
+        line1 = Line3D([], [], [], color="b", linewidth=3, antialiased=False)
+        line2 = Line3D([], [], [], color="r", linewidth=3, antialiased=False)
+        line3 = Line3D([], [], [], color="r", linewidth=3, antialiased=False)
         
         L: float = self.quad.l
         point: np.ndarray = np.array([
