@@ -4,16 +4,9 @@ import numpy as np
 
 from typing import Union
 from scipy.integrate import ode
-
 from dataclasses import dataclass, field
 
-
-@dataclass
-class MotorConfig(object):
-    d: float 
-    pitch: float
-    speed: float = field(default=0.0)
-    force: float = field(default=0.0)
+from quad import Motors, MotorConfig
 
 
 @dataclass
@@ -24,11 +17,6 @@ class QuadConfig(object):
     states: list[list[float]]
     motors: MotorConfig
     drag_c: float
-
-
-class Motors(object):
-    def __init__(self, config: MotorConfig) -> None:
-        pass
 
 
 class Quadcopter(object):
@@ -48,7 +36,7 @@ class Quadcopter(object):
         self._states[6:9] = np.array(config.states[1])
         self._motors: Motors = Motors(config.motors)
 
-        self._solver: ode = ode(f=self._fetch_state).set_integrator('vode')
+        self._solver: ode = ode(f=self._fetch_state).set_integrator("vode")
 
     def start(self, dt: float = 5e-2, scale: float = 1.0) -> None:
         self._thread = threading.Thread()
@@ -73,7 +61,8 @@ class Quadcopter(object):
     def _update(self, dt: float) -> None:
         self._solver.set_initial_value(self._state, 0).set_f_params()
         self._solver.integrate(self._solver.t + dt)
-        
 
-    def _fetch_state(self, t: float, state: np.ndarray, thrust: np.ndarray) -> np.ndarray:
+    def _fetch_state(
+        self, t: float, state: np.ndarray, thrust: np.ndarray
+    ) -> np.ndarray:
         pass
