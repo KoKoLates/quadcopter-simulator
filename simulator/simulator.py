@@ -2,12 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from dataclasses import dataclass
-
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Line3D
 
-from quadcopter import rotation_matrix
-from quadcopter.quad import Quadcopter
+from quad import Quadcopter
+from utils import rotation_matrix
 
 
 @dataclass
@@ -18,7 +17,7 @@ class Model(object):
     points: np.ndarray
 
 
-class Monitor(object):
+class Simulator(object):
     def __init__(self, quad: Quadcopter) -> None:
         self.fig = plt.figure()
         self.ax = Axes3D(self.fig)
@@ -47,7 +46,7 @@ class Monitor(object):
         self.model: Model = Model(line1, line2, line3, point)
 
     def update(self) -> None:
-        position, _, attitude, _ = self.quad.state
+        position, _, attitude, _ = self.quad.states
         R: np.ndarray = rotation_matrix(attitude)
         points = R @ self.model.points
         points += position[:, np.newaxis]
