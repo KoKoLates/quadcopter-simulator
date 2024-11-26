@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Line3D
 
-from quad import Quadcopter
+from quad import QuadConfig
 from utils import rotation_matrix
 
 
@@ -18,7 +18,7 @@ class Model(object):
 
 
 class Simulator(object):
-    def __init__(self, quad: Quadcopter) -> None:
+    def __init__(self, quad_config: QuadConfig) -> None:
         self.fig = plt.figure()
         self.ax = Axes3D(self.fig)
         self.ax.set_xlim3d([-2.0, 2.0])
@@ -29,7 +29,7 @@ class Simulator(object):
         self.ax.set_zlabel("Z")
         self.ax.set_title("Quadcopter Simulation")
 
-        self.quad: Quadcopter = quad
+        self.quad_config: QuadConfig = quad_config
         self.load_model()
 
     def load_model(self) -> None:
@@ -37,7 +37,7 @@ class Simulator(object):
         line2 = Line3D([], [], [], color="r", linewidth=3, antialiased=False)
         line3 = Line3D([], [], [], color="r", linewidth=3, antialiased=False)
         
-        L: float = self.quad.l
+        L: float = self.quad_config.length
         point: np.ndarray = np.array([
             [-L, 0, 0], [ L, 0, 0], [ 0,-L, 0], 
             [ 0, L, 0], [ 0, 0, 0], [ 0, 0, 0]
@@ -45,8 +45,8 @@ class Simulator(object):
         
         self.model: Model = Model(line1, line2, line3, point)
 
-    def update(self) -> None:
-        position, _, attitude, _ = self.quad.states
+    def update(self, states: np.ndarray) -> None:
+        position, _, attitude, _ = states
         R: np.ndarray = rotation_matrix(attitude)
         points = R @ self.model.points
         points += position[:, np.newaxis]

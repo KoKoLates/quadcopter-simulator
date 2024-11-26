@@ -88,7 +88,7 @@ class Quadcopter(object):
                 last = self._time
 
     def _update(self, dt: float) -> None:
-        self._solver.set_initial_value(self._state, 0).set_f_params(self._motors.thrust)
+        self._solver.set_initial_value(self._states, 0).set_f_params(self._motors.thrust)
         self._solver.integrate(self._solver.t + dt)
         self._states = np.array(self._solver.y)
         self._states[2] = max(0, self.states[2])

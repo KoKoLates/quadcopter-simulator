@@ -4,20 +4,13 @@ import threading
 import numpy as np
 
 from typing import Callable, Union
-from dataclasses import dataclass, field
-
 
 from quad import Quadcopter
 from utils import wrap
 
 
-@dataclass
-class ControlConfig(object):
-    position: tuple[float, float, float]
-
-
 class PID(object):
-    def __init__(self, config) -> None:
+    def __init__(self, config: tuple) -> None:
         self.Kp = config[0]
         self.Ki = config[1]
         self.Kd = config[2]
@@ -29,15 +22,15 @@ class PID(object):
 
 
 class Controller(object):
-    def __init__(self, config: ControlConfig, quad: Quadcopter) -> None:
+    def __init__(self, quad: Quadcopter) -> None:
         self._quad: Quadcopter = quad
         self._set_motor: Callable[[np.ndarray], None] = self._quad.set_motor_speeds
 
         self._thread: Union[threading.Thread, None] = None
         self._execute: threading.Event = threading.Event
 
-        self.position: PID = PID(config)
-        self.attitude: PID = PID(config)
+        self.position: PID = PID()
+        self.attitude: PID = PID()
         self._clip_yaw = (-900, 900)
         self._clip_ang = (-10, 10)
         self._clip_mot = (4000, 9000)
